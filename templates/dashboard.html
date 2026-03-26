@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="left">
+        <h1>Dashboard 📊</h1>
+        <p>Manage your tasks</p>
+    </div>
+
+    <div class="right">
+
+        <h2>Add Task</h2>
+
+        <form method="POST" action="/add-task">
+            <input type="text" name="title" placeholder="Task title" required>
+
+            <input type="text" name="category" placeholder="Category">
+
+            <select id="prioritySelect" name="priority">
+                <option value="High">🔴 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+            </select>
+
+            <select id="alarmSong" name="alarm_song">
+                <option value="{{ url_for('static', filename='sounds/ever_tried_ever_failed.mp3') }}">Ever Tried Ever Failed (your track)</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Motivation 1</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Motivation 2</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Motivation 3</option>
+            </select>
+
+            <input type="datetime-local" name="due_date">
+
+            <button type="submit">Add Task</button>
+        </form>
+
+    </div>
+
+</div>
+<!-- SAME YOUR CODE ABOVE (NO CHANGE) -->
+
+<!-- 🔊 UPDATED AUDIO (JOLLY SOUND) -->
+<audio id="managerAudio" preload="auto" style="display:none;">
+    <source src="{{ url_for('static', filename='sounds/jolly.mp3') }}" type="audio/mpeg">
+</audio>
+
+<!-- 🔥 IMPROVED POPUP (MODERN UI) -->
+<div id="popup" style="
+display:none;
+position:fixed;
+top:20%;
+left:50%;
+transform:translateX(-50%);
+background:linear-gradient(135deg,#ff9800,#ff5722);
+color:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 10px 25px rgba(0,0,0,0.3);
+z-index:1000;
+text-align:center;
+min-width:250px;
+animation:fadeIn 0.5s ease;
+">
+    <h3 id="popupText"></h3>
+    <button onclick="stopAlarm()" style="margin:10px;padding:8px 15px;border:none;border-radius:8px;background:#fff;color:#ff5722;font-weight:bold;">Stop</button>
+    <button onclick="snooze()" style="margin:10px;padding:8px 15px;border:none;border-radius:8px;background:#fff;color:#ff9800;font-weight:bold;">Snooze</button>
+</div>
+
+<style>
+@keyframes fadeIn {
+    from {opacity:0; transform:translate(-50%, -20px);}
+    to {opacity:1; transform:translate(-50%, 0);}
+}
+</style>
+
+<script>
+
+let taskList = JSON.parse('{{ tasks_json | tojson | safe }}');
+let alertedTasks = new Set();
+
+function playJollySound() {
+    let audio = document.getElementById('managerAudio');
+    audio.volume = 1.0;
+    audio.currentTime = 0;
+    audio.play().catch(e => console.log("Audio blocked", e));
+}
+
+// 🔥 UPDATED (NO MORE ANNOYING BEEP)
+let soundInterval = null;
+
+function playBeep() {
+    stopSound(); // clear old sound
+
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        let count = 0;
+
+        soundInterval = setInterval(() => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(700, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+
+            count++;
+
+            // stop after ~30 seconds
+            if (count >= 30) {
+                stopSound();
+            }
+
+        }, 1000);
+
+    } catch (e) {
+        console.log("Sound error:", e);
+    }
+}
+function stopSound() {
+    if (soundInterval) {
+        clearInterval(soundInterval);
+        soundInterval = null;
+    }
+}
+function vibratePattern(pattern) {
+    if (navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+}
+
+function playPriorityAudio(level) {
+    if (level === 'High') {
+        playJollySound();
+    } else if (level === 'Medium') {
+        playJollySound();
+    }
+}
+
+function checkReminder() {
+    let now = new Date();
+
+    taskList.forEach(task => {
+        if (!task.due_date) return;
+        if (alertedTasks.has(task.id)) return;
+
+        let taskTime = new Date(task.due_date);
+        let diff = (taskTime - now) / 1000;
+
+        if (diff <= 30 && diff >= -30) {
+            alertedTasks.add(task.id);
+
+            window.currentTaskStopped = false;
+
+            showPopup(task.title);
+        }
+    });
+}
+
+// 🔥 UPDATED POPUP WITH SOUND
+function showPopup(title) {
+    // ❌ if already stopped, don’t show again
+    if (window.currentTaskStopped) return;
+
+    document.getElementById("popup").style.display = "block";
+    document.getElementById("popupText").innerText = "⏰ Reminder: " + title;
+
+    playBeep();
+}
+function stopAlarm() {
+    stopSound(); // 🔊 stop sound
+
+    document.getElementById("popup").style.display = "none";
+
+    window.currentTaskStopped = true;
+}
+
+  
+
+
+function snooze() {
+    stopSound();
+    document.getElementById("popup").style.display = "none";
+
+    setTimeout(() => {
+        window.currentTaskStopped = false;
+        playBeep();
+        document.getElementById("popup").style.display = "block";
+    }, 300000); // ⏰ 5 minutes (300000 ms)
+}
+
+// check every 3 seconds
+setInterval(checkReminder, 3000);
+
+// enable audio after first click (browser restriction fix)
+
+document.body.addEventListener('click', () => {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume();
+        console.log("Audio unlocked");
+    } catch(e){}
+}, { once: true });
+</script>
+
+<hr>
+<h3>Your Tasks</h3>
+
+{% if tasks|length == 0 %}
+    <p>No tasks yet</p>
+{% else %}
+    {% for task in tasks %}
+        <div class="user-card">
+            <p><strong>{{ task.title }}</strong></p>
+            <p>📂 {{ task.category }}</p>
+            <p>⚡ {{ task.priority }}</p>
+            <p>📅 {{ task.due_date }}</p>
+        </div>
+    {% endfor %}
+{% endif %}
+
+</body>
+</html>

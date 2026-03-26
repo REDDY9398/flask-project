@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Panel</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- LEFT SIDE -->
+    <div class="left">
+        <h1>Manager Panel 👨‍💼</h1>
+        <p>View all registered users securely</p>
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+        <h2>Access Database</h2>
+
+        <form method="POST">
+            <input type="password" name="key" placeholder="Enter Manager Key" required>
+            <button type="submit">View Users</button>
+        </form>
+
+        {% if message %}
+            <p>{{ message }}</p>
+        {% endif %}
+
+        <hr>
+
+        <h3>All Users</h3>
+
+        {% if users|length == 0 %}
+            <p>🔒 Enter correct key to view data</p>
+        {% else %}
+            {% for user in users %}
+                <div class="user-card">
+                    <p><strong>👤 {{ user.username }}</strong></p>
+                    <p>📧 {{ user.email }}</p>
+                    <p>🔑 Hidden</p>
+
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete {{ user.username }}?');">
+                        <button type="submit">Delete User</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

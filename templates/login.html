@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+<a href="/forgot">Forgot Password?</a>
+<div class="container">
+
+    <!-- LEFT SIDE -->
+    <div class="left">
+        <h1>Welcome Back 👋</h1>
+        <p>Login to access your account</p>
+        <img src="https://cdn-icons-png.flaticon.com/512/5087/5087579.png" alt="login">
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+        <h2>Login</h2>
+
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            
+            <input type="password" name="password" placeholder="Password" required>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <a href="/forgot">Forgot Password?</a>
+    </div>
+
+</div>
+{% if message %}
+    <div class="msg">{{ message }}</div>
+{% endif %}
+</body>
+</html>

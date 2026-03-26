@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reset Password</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+<style>
+    body {
+        margin: 0;
+        background: linear-gradient(135deg, rgba(0,22,38,0.8), rgba(10, 67, 93, 0.75)),
+            url('https://images.pexels.com/photos/1445999/pexels-photo-1445999.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260') no-repeat center center fixed;
+        background-size: cover;
+        color: #fff;
+        min-height: 100vh;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    .container {
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .left, .right {
+        box-shadow: 0 16px 30px rgba(0,0,0,0.55);
+    }
+    .left {
+        background: rgba(10, 20, 40, 0.72);
+        border-radius: 18px;
+    }
+    .right {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 18px;
+        max-width: 420px;
+    }
+    .right a, .right .msg { color: #1a416d; }
+</style>
+
+<div class="container">
+
+    <!-- LEFT SIDE -->
+    <div class="left">
+        <h1>Reset Password 🔐</h1>
+        <p>Update your password securely</p>
+        <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png">
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+        <h2>Forgot Password</h2>
+
+        {% if message %}
+            <div class="msg">{{ message }}</div>
+        {% endif %}
+
+        <form id="forgotForm" onsubmit="return patchForgot(event)">
+            <input type="email" id="email" name="email" placeholder="Registered Email" required>
+
+            <input type="password" id="new_password" name="new_password" placeholder="New Password" required>
+
+            <input type="password" id="confirm" name="confirm" placeholder="Confirm Password" required>
+
+            <button type="submit">Update Password</button>
+        </form>
+
+        <a href="/login">Back to Login</a>
+
+        <script>
+            async function patchForgot(event) {
+                event.preventDefault();
+
+                const email = document.getElementById('email').value;
+                const new_password = document.getElementById('new_password').value;
+                const confirm = document.getElementById('confirm').value;
+
+                const res = await fetch('/forgot', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, new_password, confirm })
+                });
+
+                const data = await res.json();
+                const msgBox = document.querySelector('.msg') || document.createElement('div');
+                msgBox.className = 'msg';
+                msgBox.innerText = data.message || (res.ok ? '✅ Updated' : '❌ Error');
+
+                if (!document.querySelector('.msg')) {
+                    document.getElementById('forgotForm').before(msgBox);
+                }
+
+                if (res.ok) {
+                    document.getElementById('forgotForm').reset();
+                }
+
+                return false;
+            }
+        </script>
+    </div>
+
+</div>
+
+</body>
+</html>
